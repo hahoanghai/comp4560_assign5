@@ -63,7 +63,7 @@ namespace asgn5v1
 			this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
 			this.SetStyle(ControlStyles.UserPaint, true);
 			this.SetStyle(ControlStyles.DoubleBuffer, true);
-			Text = "COMP 4560:  Assignment 5 (200830) (Your Name Here)";
+			Text = "COMP 4560:  Assignment 5 (200830) (Hai Ha)";
 			ResizeRedraw = true;
 			BackColor = Color.Black;
 			MenuItem miNewDat = new MenuItem("New &Data...",
@@ -383,7 +383,8 @@ namespace asgn5v1
 
 		void RestoreInitialImage()
 		{
-			Invalidate();
+            InitializeImage();
+            Invalidate();
 		} // end of RestoreInitialImage
 
 		bool GetNewData()
@@ -479,14 +480,81 @@ namespace asgn5v1
 				A[i,i] = 1.0d;
 			}
 		}// end of setIdentity
-      
 
-		private void Transformer_Load(object sender, System.EventArgs e)
+        private void MatrixMultiply(double[,] output, double[,] inputOne, double[,] inputTwo, int maxSize)
+        {
+            int k; double temp;
+            for (int i = 0; i < maxSize; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    temp = 0.0d;
+                    for (k = 0; k < 4; k++)
+                    {
+                        temp += inputOne[i, k] * inputTwo[k, j];
+                    }
+                    output[i, j] = temp;
+                }
+            }
+        }
+
+        private void AppendTranslate(double x, double y, double z)
+        {
+            double[,] translateMat = new double[4, 4];
+            setIdentity(translateMat, 4, 4);
+
+            translateMat[3, 0] = x;
+            translateMat[3, 1] = y;
+            translateMat[3, 2] = z;
+
+            MatrixMultiply(ctrans, ctrans, translateMat, 4);
+        }
+
+        private void AppendScale(double x, double y, double z)
+        {
+            double[,] scaleMat = new double[4, 4];
+            setIdentity(scaleMat, 4, 4);
+
+            scaleMat[0, 0] = x;
+            scaleMat[1, 1] = y;
+            scaleMat[2, 2] = z;
+
+            MatrixMultiply(ctrans, ctrans, scaleMat, 4);
+        }
+
+        private void RefectAroundX()
+        {
+            double[,] reflectMat = new double[4, 4];
+            setIdentity(reflectMat, 4, 4);
+
+            reflectMat[1, 1] = -1;
+            MatrixMultiply(ctrans, ctrans, reflectMat, 4);
+        }
+
+        private void Transformer_Load(object sender, System.EventArgs e)
 		{
 			
 		}
 
-		private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e)
+        private void InitializeImage()
+        {
+            setIdentity(ctrans, 4, 4);
+
+            AppendTranslate(vertices[0, 0] * -1,
+                            vertices[0, 1] * -1,
+                            vertices[0, 2] * -1);
+
+            AppendScale((ClientSize.Height / 2) / (vertices[0, 0] * 2),
+                        (ClientSize.Height / 2) / (vertices[0, 0] * 2),
+                        (ClientSize.Height / 2) / (vertices[0, 0] * 2));
+            //AppendScale((this.Size.Width / 50), (this.Size.Width / 50), (this.Size.Width / 50));
+
+            RefectAroundX();
+
+            AppendTranslate(ClientSize.Width / 2, ClientSize.Height / 2, 0);
+        }
+
+        private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e)
 		{
 			if (e.Button == transleftbtn)
 			{
