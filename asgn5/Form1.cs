@@ -50,6 +50,10 @@ namespace asgn5v1
 		private System.Windows.Forms.ToolBarButton exitbtn;
 		int[,] lines;
 
+        Timer timer;
+
+        string rotationType = "";
+
 		public Transformer()
 		{
 			//
@@ -77,8 +81,10 @@ namespace asgn5v1
 				new EventHandler(MenuAboutOnClick));
 			Menu = new MainMenu(new MenuItem[] {miFile, miAbout});
 
-			
-		}
+            timer = new Timer();
+            timer.Interval = 1;
+            timer.Tick += new EventHandler(Transformer_Load);
+        }
 
 		/// <summary>
 		/// Clean up any resources being used.
@@ -383,6 +389,8 @@ namespace asgn5v1
 
 		void RestoreInitialImage()
 		{
+            timer.Stop();
+            rotationType = "";
             InitializeImage();
             Invalidate();
 		} // end of RestoreInitialImage
@@ -498,134 +506,327 @@ namespace asgn5v1
             }
         }
 
-        private void AppendTranslate(double x, double y, double z)
+        private double[,] matMultiply(double[,] M1, double[,] M2)
         {
-            double[,] translateMat = new double[4, 4];
-            setIdentity(translateMat, 4, 4);
+            double[,] result = new double[M1.GetUpperBound(0) + 1, M1.GetUpperBound(1) + 1];
 
-            translateMat[3, 0] = x;
-            translateMat[3, 1] = y;
-            translateMat[3, 2] = z;
-
-            MatrixMultiply(ctrans, ctrans, translateMat, 4);
+            for (int x = 0; x < M1.GetUpperBound(0) + 1; x++)
+            {
+                for (int y = 0; y < M2.GetUpperBound(1) + 1; y++)
+                {
+                    for (int z = 0; z < M1.GetUpperBound(1) + 1; z++)
+                    {
+                        result[x, y] += M1[x, z] * M2[z, y];
+                    }
+                }
+            }
+            return result;
         }
 
-        private void AppendScale(double x, double y, double z)
+        private void Translation(double x, double y, double z)
         {
-            double[,] scaleMat = new double[4, 4];
-            setIdentity(scaleMat, 4, 4);
+            double[,] translationMatrix = new double[4, 4];
+            setIdentity(translationMatrix, 4, 4);
 
-            scaleMat[0, 0] = x;
-            scaleMat[1, 1] = y;
-            scaleMat[2, 2] = z;
+            translationMatrix[3, 0] = x;
+            translationMatrix[3, 1] = y;
+            translationMatrix[3, 2] = z;
 
-            MatrixMultiply(ctrans, ctrans, scaleMat, 4);
+            MatrixMultiply(ctrans, ctrans, translationMatrix, 4);
         }
 
-        private void RefectAroundX()
+        private void Scaling(double x, double y, double z)
         {
-            double[,] reflectMat = new double[4, 4];
-            setIdentity(reflectMat, 4, 4);
+            double[,] scalingMatrix = new double[4, 4];
+            setIdentity(scalingMatrix, 4, 4);
 
-            reflectMat[1, 1] = -1;
-            MatrixMultiply(ctrans, ctrans, reflectMat, 4);
+            scalingMatrix[0, 0] = x;
+            scalingMatrix[1, 1] = y;
+            scalingMatrix[2, 2] = z;
+
+            MatrixMultiply(ctrans, ctrans, scalingMatrix, 4);
+        }
+
+        private void Reflection(char _)
+        {
+            double[,] reflectingMatrix = new double[4, 4];
+            setIdentity(reflectingMatrix, 4, 4);
+
+            // Reflection to x axis --> y = -y
+            if (_.CompareTo('x') == 0)
+            {
+                reflectingMatrix[1, 1] = -1;
+            }
+            // Reflection to y axis --> x = -x
+            if (_.CompareTo('y') == 0)
+            {
+                reflectingMatrix[0, 0] = -1;
+            }
+            MatrixMultiply(ctrans, ctrans, reflectingMatrix, 4);
+        }
+
+        private void RotationX(double radians)
+        {
+            double[,] rotMat = new double[4, 4];
+            setIdentity(rotMat, 4, 4);
+
+            rotMat[1, 1] = Math.Cos(radians);
+            rotMat[1, 2] = Math.Sin(radians);
+            rotMat[2, 1] = -1 * Math.Sin(radians);
+            rotMat[2, 2] = Math.Cos(radians);
+
+            //MatrixMultiply(ctrans, ctrans, rotMat, 4);
+            ctrans = matMultiply(ctrans, rotMat);
+        }
+
+        private void RotationY(double radians)
+        {
+            double[,] rotMat = new double[4, 4];
+            setIdentity(rotMat, 4, 4);
+
+            rotMat[0, 0] = Math.Cos(radians);
+            rotMat[2, 0] = Math.Sin(radians);
+            rotMat[0, 2] = -1 * Math.Sin(radians);
+            rotMat[2, 2] = Math.Cos(radians);
+
+            //MatrixMultiply(ctrans, ctrans, rotMat, 4);
+            ctrans = matMultiply(ctrans, rotMat);
+        }
+
+        private void RotationZ(double radians)
+        {
+            double[,] rotMat = new double[4, 4];
+            setIdentity(rotMat, 4, 4);
+
+            rotMat[0, 0] = Math.Cos(radians);
+            rotMat[1, 0] = Math.Sin(radians);
+            rotMat[0, 1] = -1 * Math.Sin(radians);
+            rotMat[1, 1] = Math.Cos(radians);
+
+            //MatrixMultiply(ctrans, ctrans, rotMat, 4);
+            ctrans = matMultiply(ctrans, rotMat);
+        }
+
+
+        private void AppendShearingXWithRespectToY(double ratio)
+        {
+            double[,] shearMat = new double[4, 4];
+            setIdentity(shearMat, 4, 4);
+            shearMat[1, 0] = ratio;
+
+            //double x = ctrans[3, 0], y = ctrans[3, 1], z = ctrans[3, 2];
+            double x = scrnpts[16, 0];
+            double y = scrnpts[16, 1];
+            double z = scrnpts[16, 2];
+            Translation(-x,-y,-z);
+            MatrixMultiply(ctrans, ctrans, shearMat, 4);
+            Translation(x,y,z);
         }
 
         private void Transformer_Load(object sender, System.EventArgs e)
 		{
-			
-		}
+            if (sender == timer)
+            {
+                if (rotationType.CompareTo("x") == 0)
+                {
+                    double x = scrnpts[0, 0];
+                    double y = scrnpts[0, 1];
+                    double z = scrnpts[0, 2];
+                    Translation(-x, -y, -z);
+                    RotationX(0.05);
+                    Translation(x, y, z);
+                }
+                else if (rotationType == "y")
+                {
+                    double x = scrnpts[0, 0];
+                    double y = scrnpts[0, 1];
+                    double z = scrnpts[0, 2];
+                    Translation(-x, -y, -z);
+                    RotationY(0.05);
+                    Translation(x, y, z);
+                }
+                else if (rotationType == "z")
+                {
+                    double x = scrnpts[0, 0];
+                    double y = scrnpts[0, 1];
+                    double z = scrnpts[0, 2];
+                    Translation(-x, -y, -z);
+                    RotationZ(0.05);
+                    Translation(x, y, z);
+                }
+                Refresh();
+            }
+        }
 
+        //Initialize the beginning data to center and half height of screen
         private void InitializeImage()
         {
+            timer.Stop();
+            double halfHeight = ClientSize.Height / 2;
+            double halfWidth = ClientSize.Width / 2;
+
+            //assuming all the shape is 20 x 20
+            double scalingRate = halfHeight / 20;
             setIdentity(ctrans, 4, 4);
 
-            AppendTranslate(vertices[0, 0] * -1,
-                            vertices[0, 1] * -1,
-                            vertices[0, 2] * -1);
+            //translate center of Q to (0,0)
+            Translation(vertices[0, 0] * -1, vertices[0, 1] * -1, vertices[0, 2] * -1);
+      
+            Scaling(scalingRate, scalingRate, scalingRate);
 
-            AppendScale((ClientSize.Height / 2) / (vertices[0, 0] * 2),
-                        (ClientSize.Height / 2) / (vertices[0, 0] * 2),
-                        (ClientSize.Height / 2) / (vertices[0, 0] * 2));
-            //AppendScale((this.Size.Width / 50), (this.Size.Width / 50), (this.Size.Width / 50));
+            Reflection('x');
 
-            RefectAroundX();
-
-            AppendTranslate(ClientSize.Width / 2, ClientSize.Height / 2, 0);
+            Translation(halfWidth, halfHeight, 0);
         }
+
+
 
         private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e)
 		{
 			if (e.Button == transleftbtn)
 			{
+                timer.Stop();
+                Translation(-75.0, 0.0, 0.0);
 				Refresh();
 			}
 			if (e.Button == transrightbtn) 
 			{
+                timer.Stop();
+                Translation(75.0, 0.0, 0.0);
 				Refresh();
 			}
 			if (e.Button == transupbtn)
 			{
+                timer.Stop();
+                Translation(0.0, -35.0, 0.0);
 				Refresh();
 			}
 			
 			if(e.Button == transdownbtn)
 			{
+                timer.Stop();
+                Translation(0.0, 35.0, 0.0);
 				Refresh();
 			}
 			if (e.Button == scaleupbtn) 
 			{
+                timer.Stop();
+                double x = scrnpts[0, 0];
+                double y = scrnpts[0, 1];
+                double z = scrnpts[0, 2];
+                //Translation(-halfWidth, -halfHeight, 0);
+                Translation(-x, -y, -z);
+                Scaling(1.1, 1.1, 1.1);
+                //Translation(halfWidth, halfHeight, 0);
+                Translation(x, y, z);
 				Refresh();
 			}
 			if (e.Button == scaledownbtn) 
 			{
+                timer.Stop();
+                double x = scrnpts[0, 0];
+                double y = scrnpts[0, 1];
+                double z = scrnpts[0, 2];
+                Translation(-x, -y, -z);
+                Scaling(0.9, 0.9, 0.9);
+                Translation(x, y, z);
 				Refresh();
 			}
 			if (e.Button == rotxby1btn) 
 			{
-				
+                timer.Stop();
+                //   Translation(-halfWidth, -halfHeight, 0);
+                double x = scrnpts[0, 0];
+                double y = scrnpts[0, 1];
+                double z = scrnpts[0, 2];
+                Translation(-x, -y, -z);
+                RotationX(0.05);
+                Translation(x, y, z);
+             //   Translation(halfWidth, halfHeight, 0);
+                Refresh();
 			}
 			if (e.Button == rotyby1btn) 
 			{
-				
+                timer.Stop();
+                // Translation(-halfWidth, -halfHeight, 0);
+                double x = scrnpts[0, 0];
+                double y = scrnpts[0, 1];
+                double z = scrnpts[0, 2];
+                Translation(-x, -y, -z);
+                RotationY(0.05);
+                Translation(x, y, z);
+              //  Translation(halfWidth, halfHeight, 0);
+                Refresh();
 			}
 			if (e.Button == rotzby1btn) 
 			{
-				
+                timer.Stop();
+                double x = scrnpts[0, 0];
+                double y = scrnpts[0, 1];
+                double z = scrnpts[0, 2];
+                Translation(-x, -y, -z);
+                RotationZ(0.05);
+                Translation(x, y, z);
+              
+                Refresh();
 			}
 
 			if (e.Button == rotxbtn) 
 			{
-				
-			}
+                if (rotationType.CompareTo("x") != 0  || timer.Enabled == false)
+                {
+                    rotationType = "x";
+                    timer.Stop();
+                    timer.Start();
+                }
+                else { timer.Stop(); }
+            }
 			if (e.Button == rotybtn) 
 			{
-				
-			}
+                if (rotationType.CompareTo("y") != 0 || timer.Enabled == false)
+                {
+                    rotationType = "y";
+                    timer.Stop();
+                    timer.Start();
+                }
+                else { timer.Stop(); }
+            }
 			
 			if (e.Button == rotzbtn) 
 			{
-				
-			}
+                if (rotationType.CompareTo("z") != 0 || timer.Enabled == false)
+                {
+                    rotationType = "z";
+                    timer.Stop();
+                    timer.Start();
+                }
+                else { timer.Stop(); }
+            }
 
 			if(e.Button == shearleftbtn)
 			{
-				Refresh();
+                timer.Stop();
+                AppendShearingXWithRespectToY(0.1);
+                Refresh();
 			}
 
 			if (e.Button == shearrightbtn) 
 			{
-				Refresh();
+                timer.Stop();
+                AppendShearingXWithRespectToY(-0.1);
+                Refresh();
 			}
 
 			if (e.Button == resetbtn)
 			{
-				RestoreInitialImage();
+                timer.Stop();
+                RestoreInitialImage();
 			}
 
 			if(e.Button == exitbtn) 
 			{
-				Close();
+                timer.Stop();
+                Close();
 			}
 
 		}

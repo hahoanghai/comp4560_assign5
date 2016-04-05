@@ -24,3 +24,11 @@ E:\CST term 4 Winter 2015\COMP 4560 Graphic\comp4560_assign5\asgn5\obj\Debug\asg
 E:\CST term 4 Winter 2015\COMP 4560 Graphic\comp4560_assign5\asgn5\obj\Debug\asgn5v1.AboutDialogBox.resources
 E:\CST term 4 Winter 2015\COMP 4560 Graphic\comp4560_assign5\asgn5\obj\Debug\asgn5v1.Transformer.resources
 E:\CST term 4 Winter 2015\COMP 4560 Graphic\comp4560_assign5\asgn5\obj\Debug\asgn5v1.csproj.GenerateResource.Cache
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\obj\Debug\asgn5v1.exe
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\obj\Debug\asgn5v1.pdb
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\bin\Debug\asgn5v1.exe
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\bin\Debug\asgn5v1.pdb
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\obj\Debug\asgn5v1.csprojResolveAssemblyReference.cache
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\obj\Debug\asgn5v1.AboutDialogBox.resources
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\obj\Debug\asgn5v1.Transformer.resources
+H:\MyCourses\COMP4560\comp4560_assign5\asgn5\obj\Debug\asgn5v1.csproj.GenerateResource.Cache
